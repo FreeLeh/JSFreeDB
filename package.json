@@ -1,0 +1,29 @@
+{
+  "name": "jsfreedb",
+  "version": "0.0.1",
+  "description": "JSFreeDB is a JavaScript library that provides common and simple database abstractions on top of Google Sheets.",
+  "main": "dist/index.js",
+  "scripts": {
+    "test": "jest"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/FreeLeh/JSFreeDB.git"
+  },
+  "author": "Edwin Candinegara",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/FreeLeh/JSFreeDB/issues"
+  },
+  "homepage": "https://github.com/FreeLeh/JSFreeDB",
+  "devDependencies": {
+    "@types/jest": "^29.5.14",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.2.6",
+    "typescript": "^5.7.3"
+  },
+  "dependencies": {
+    "@google-cloud/local-auth": "^2.1.0",
+    "googleapis": "^105.0.0"
+  }
+}
