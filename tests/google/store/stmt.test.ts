@@ -149,28 +149,31 @@ describe('GoogleSheetInsertStmt', () => {
         stmt = new GoogleSheetInsertStmt(store, []);
     });
 
-    describe('convertRowToSlice', () => {
+    describe('convertRowToArray', () => {
         it('throws on null or undefined', () => {
-            expect(() => (stmt as any).convertRowToSlice(null)).toThrow(
+            expect(() => (stmt as any).convertRowToArray(null)).toThrow(
                 'row type must not be null'
             );
-            expect(() => (stmt as any).convertRowToSlice(undefined)).toThrow(
+            expect(() => (stmt as any).convertRowToArray(undefined)).toThrow(
                 'row type must be an object'
             );
         });
 
         it('throws on non‐object values', () => {
             expect(() =>
-                (stmt as any).convertRowToSlice(123 as any)
+                (stmt as any).convertRowToArray(123 as any)
             ).toThrow('row type must be an object');
             expect(() =>
-                (stmt as any).convertRowToSlice('foo' as any)
+                (stmt as any).convertRowToArray('foo' as any)
+            ).toThrow('row type must be an object');
+            expect(() =>
+                (stmt as any).convertRowToArray(['foo'] as any)
             ).toThrow('row type must be an object');
         });
 
         it('converts a plain object correctly', () => {
             const row = { name: 'blah', age: 10, dob: '2021' };
-            const result = (stmt as any).convertRowToSlice(row);
+            const result = (stmt as any).convertRowToArray(row);
             expect(result).toEqual([
                 ROW_IDX_FORMULA,
                 'blah',   // name (no formula)
@@ -188,7 +191,7 @@ describe('GoogleSheetInsertStmt', () => {
                 ) { }
             }
             const person = new Person('blah', 10, '2021');
-            const result = (stmt as any).convertRowToSlice(person);
+            const result = (stmt as any).convertRowToArray(person);
             expect(result).toEqual([
                 ROW_IDX_FORMULA,
                 'blah',
@@ -199,7 +202,7 @@ describe('GoogleSheetInsertStmt', () => {
 
         it('fills missing fields as undefined', () => {
             const partial = { name: 'blah', dob: '2021' } as any;
-            const result = (stmt as any).convertRowToSlice(partial);
+            const result = (stmt as any).convertRowToArray(partial);
             expect(result).toEqual([
                 ROW_IDX_FORMULA,
                 'blah',
@@ -210,7 +213,7 @@ describe('GoogleSheetInsertStmt', () => {
 
         it('handles an object with only name', () => {
             const onlyName = { name: 'blah' };
-            const result = (stmt as any).convertRowToSlice(onlyName);
+            const result = (stmt as any).convertRowToArray(onlyName);
             expect(result).toEqual([
                 ROW_IDX_FORMULA,
                 'blah',
@@ -223,12 +226,12 @@ describe('GoogleSheetInsertStmt', () => {
             const maxSafe = Number.MAX_SAFE_INTEGER;         // 2^53-1
             const safeRow = { name: 'x', age: maxSafe, dob: '2021' };
             expect(() =>
-                (stmt as any).convertRowToSlice(safeRow)
+                (stmt as any).convertRowToArray(safeRow)
             ).not.toThrow();
 
             const overSafe = { name: 'x', age: maxSafe + 1, dob: '2021' };
             expect(() =>
-                (stmt as any).convertRowToSlice(overSafe)
+                (stmt as any).convertRowToArray(overSafe)
             ).toThrow();
         });
     });

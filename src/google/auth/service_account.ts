@@ -2,7 +2,7 @@ import * as google from 'googleapis';
 
 import { AuthClient } from './base';
 
-export default class ServiceAccountGoogleAuthClient implements AuthClient {
+export class ServiceAccountGoogleAuthClient implements AuthClient {
     private auth!: google.Auth.GoogleAuth;
 
     private constructor(auth: google.Auth.GoogleAuth) {
@@ -10,9 +10,8 @@ export default class ServiceAccountGoogleAuthClient implements AuthClient {
     }
 
     public static fromServiceAccountInfo(serviceAccountInfo: google.Auth.JWTInput, scopes: string[]): ServiceAccountGoogleAuthClient {
-        const jsonAuthClient = new google.Auth.GoogleAuth().fromJSON(serviceAccountInfo);
         const authClient = new google.Auth.GoogleAuth({
-            authClient: jsonAuthClient,
+            credentials: serviceAccountInfo,
             scopes: scopes,
         });
         return new ServiceAccountGoogleAuthClient(authClient);

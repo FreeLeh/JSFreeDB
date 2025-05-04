@@ -4,7 +4,8 @@
   "description": "JSFreeDB is a JavaScript library that provides common and simple database abstractions on top of Google Sheets.",
   "main": "dist/index.js",
   "scripts": {
-    "test": "jest"
+    "test": "jest",
+    "integration-test": "npm run test -- --testPathPattern=integration"
   },
   "repository": {
     "type": "git",

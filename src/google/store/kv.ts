@@ -1,5 +1,4 @@
-import { GoogleAuth } from 'google-auth-library';
-
+import { AuthClient } from '../auth/base'
 import { GoogleSheetRowStore, GoogleSheetRowStoreConfig } from './row';
 import { KVMode, KeyNotFoundError } from '../utils/kv';
 import { Codec } from '../codec/base';
@@ -40,17 +39,27 @@ export class GoogleSheetKVStore {
                 .limit(1)
                 .exec();
         }
-        if (rawRows.length === 0 || rawRows[0]!.value === '') {
+
+        if (rawRows.length === 0) {
             throw new KeyNotFoundError();
         }
 
+        const value = rawRows[0]!.value;
+        if (value === '' || value === null || value === undefined) {
+            throw new KeyNotFoundError();
+        }
         return this.codec.decode(rawRows[0]!.value);
     }
 
     async set(key: string, value: any): Promise<void> {
         const encoded = await this.codec.encode(value);
-        const row: GoogleSheetKVStoreRow = { key, value: encoded };
-        await this.rowStore.insert(row).exec();
+
+        if (this.mode === KVMode.Default) {
+            await this.rowStore.delete()
+                .where('key =?', key)
+                .exec();
+        }
+        await this.rowStore.insert({ key, value: encoded }).exec();
     }
 
     async delete(key: string): Promise<void> {
@@ -65,7 +74,7 @@ export class GoogleSheetKVStore {
     }
 
     static async create(
-        auth: GoogleAuth,
+        auth: AuthClient,
         spreadsheetId: string,
         sheetName: string,
         config: GoogleSheetKVStoreConfig,

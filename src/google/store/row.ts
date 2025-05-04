@@ -1,4 +1,4 @@
-import { GoogleAuth } from 'google-auth-library';
+import { AuthClient } from '../auth/base'
 
 import { Wrapper } from '../sheets/wrapper'
 import {
@@ -102,7 +102,7 @@ export class GoogleSheetRowStore {
      * It will also try to create the sheet if it does not exist yet.
      */
     public static async create(
-        auth: GoogleAuth,
+        auth: AuthClient,
         spreadsheetId: string,
         sheetName: string,
         config: GoogleSheetRowStoreConfig
@@ -163,7 +163,7 @@ export class GoogleSheetRowStore {
      * Each value will be JSON serialized before sending.
      * If colToValue is empty, an error will be thrown when exec() is called.
      */
-    public update(colToValue: Map<string, any>): GoogleSheetUpdateStmt {
+    public update(colToValue: Record<string, any>): GoogleSheetUpdateStmt {
         return new GoogleSheetUpdateStmt(this, colToValue);
     }
 
@@ -211,7 +211,7 @@ export class GoogleSheetRowStore {
  * We use this for detecting empty rows for UPDATE without a WHERE clause.
  * Otherwise, updates would affect all rows instead of non-empty ones only.
  */
-function injectTimestampCol(
+export function injectTimestampCol(
     config: GoogleSheetRowStoreConfig
 ): GoogleSheetRowStoreConfig {
     const newColumns = [ROW_IDX_COL, ...config.columns];

@@ -2,6 +2,7 @@ import { google, sheets_v4 } from 'googleapis';
 import axios, { AxiosInstance } from 'axios';
 import { GoogleAuth } from 'google-auth-library';
 
+import { AuthClient } from '../auth/base';
 import {
     AppendMode,
     A1Range,
@@ -19,13 +20,13 @@ import {
 } from './models';
 
 export class Wrapper {
-    private auth: GoogleAuth;
+    private googleAuth: GoogleAuth;
     private service: sheets_v4.Sheets;
     private rawClient: AxiosInstance;
 
-    constructor(auth: GoogleAuth) {
-        this.auth = auth;
-        this.service = google.sheets({ version: 'v4', auth });
+    constructor(auth: AuthClient) {
+        this.googleAuth = auth.getAuth();
+        this.service = google.sheets({ version: 'v4', auth: this.googleAuth });
         this.rawClient = axios.create({ validateStatus: () => true });
     }
 
@@ -67,7 +68,7 @@ export class Wrapper {
     /**
      * Gets a mapping of sheet names to sheet IDs
      */
-    async getSheetNameToID(spreadsheetId: string): Promise<Map<string, number>> {
+    async getSheetNameToID(spreadsheetId: string): Promise<Record<string, number>> {
         const response = await this.service.spreadsheets.get({
             spreadsheetId,
         });
@@ -76,7 +77,7 @@ export class Wrapper {
             throw new Error('Failed to get sheet information');
         }
 
-        const result: Map<string, number> = new Map();
+        const result: Record<string, number> = {};
         for (const sheet of response.data.sheets) {
             if (!sheet.properties) {
                 throw new Error('Failed getSheetIDByName due to empty sheet properties');
@@ -86,7 +87,7 @@ export class Wrapper {
             const id = sheet.properties.sheetId;
 
             if (title && id) {
-                result.set(title, id);
+                result[title] = id
             }
         }
 
@@ -283,7 +284,7 @@ export class Wrapper {
         // This ensures the latest access token is used (and refreshed if needed).
         const response = await this.rawClient.get(
             url,
-            { headers: await this.auth.getRequestHeaders() },
+            { headers: await this.googleAuth.getRequestHeaders() },
         );
         if (response.status !== 200) {
             throw new Error(`Failed to query rows, status: ${response.status}`);

@@ -59,7 +59,7 @@ export class GoogleSheetSelectStmt {
      * Specifies the WHERE clause condition with placeholders (`?`) and args
      */
     where(condition: string, ...args: any[]): this {
-        this.queryBuilder.where(condition, args);
+        this.queryBuilder.where(condition, ...args);
         return this;
     }
 
@@ -110,6 +110,9 @@ export class GoogleSheetSelectStmt {
         return original.rows.map(row => {
             const obj: Record<string, any> = {};
             this.columns.forEach((col, idx) => {
+                if (col === '_rid') {
+                    return
+                }
                 obj[col] = row[idx]
             });
             return obj;
@@ -142,11 +145,11 @@ export class GoogleSheetInsertStmt {
         return fieldMap;
     }
 
-    private convertRowToSlice(row: object): any[] {
+    private convertRowToArray(row: object): any[] {
         if (row === null) {
             throw new Error('row type must not be null')
         }
-        if (typeof row !== 'object') {
+        if (typeof row !== 'object' || Array.isArray(row)) {
             throw new Error('row type must be an object')
         }
 
@@ -173,7 +176,7 @@ export class GoogleSheetInsertStmt {
             return
         }
 
-        const convertedRows: any[][] = this.rows.map(row => this.convertRowToSlice(row))
+        const convertedRows: any[][] = this.rows.map(row => this.convertRowToArray(row))
         await this.store.getWrapper().overwriteRows(
             this.store.getSpreadsheetId(),
             getA1Range(this.store.getSheetName(), DEFAULT_ROW_FULL_TABLE_RANGE),

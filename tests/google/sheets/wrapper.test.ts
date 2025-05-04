@@ -1,4 +1,4 @@
-import { GoogleAuth } from 'google-auth-library';
+import { AuthClient } from '../../../src/google/auth/base'
 import { Wrapper } from '../../../src/google/sheets/wrapper';
 import { sheets_v4 } from 'googleapis';
 import { AppendMode, A1Range } from '../../../src/google/sheets/models';
@@ -22,11 +22,11 @@ jest.mock('googleapis', () => ({
 
 describe('Wrapper', () => {
     let wrapper: Wrapper;
-    let mockAuth: jest.Mocked<GoogleAuth>;
+    let mockAuth: AuthClient;
     let mockSheetsService: jest.Mocked<sheets_v4.Sheets>;
 
     beforeEach(() => {
-        mockAuth = new GoogleAuth() as jest.Mocked<GoogleAuth>;
+        mockAuth = { getAuth: jest.fn() };
         wrapper = new Wrapper(mockAuth);
         mockSheetsService = wrapper['service'] as unknown as jest.Mocked<sheets_v4.Sheets>;
     });
