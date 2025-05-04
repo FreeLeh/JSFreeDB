@@ -1,0 +1,66 @@
+name: Full Test
+on: 
+  pull_request:
+    types: [opened, synchronize]
+
+env:
+  INTEGRATION_TEST_SPREADSHEET_ID: ${{ secrets.INTEGRATION_TEST_SPREADSHEET_ID }}
+  INTEGRATION_TEST_AUTH_JSON: ${{ secrets.INTEGRATION_TEST_AUTH_JSON }}
+
+jobs:
+  full_test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: ['22.x'] # Can expand if needed
+
+    if: github.event.review.state == 'approved' || github.event.pull_request.user.login == 'edocsss'
+
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          ref: ${{ github.head_ref }}
+
+      - name: Dump GitHub context
+        env:
+          GITHUB_CONTEXT: ${{ toJson(github) }}
+        run: echo "$GITHUB_CONTEXT"
+
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Compile TypeScript
+        run: npx tsc --noEmit
+
+      - name: Run Unit Tests with Coverage
+        run: |
+          npm run test -- --coverage
+          cp coverage/lcov.info coverage.out
+
+      - name: Generate Coverage Badge
+        uses: tj-actions/coverage-badge-js@v1
+        with:
+          green: 80
+          coverage-summary-path: coverage/coverage-summary.json
+
+      - name: Add Coverage Badge
+        uses: stefanzweifel/git-auto-commit-action@v4
+        id: auto-commit-action
+        with:
+          commit_message: Apply Code Coverage Badge
+          skip_fetch: true
+          skip_checkout: true
+          file_pattern: ./README.md
+
+      - name: Push Changes
+        if: steps.auto-commit-action.outputs.changes_detected == 'true'
+        uses: ad-m/github-push-action@master
+        with:
+          github_token: ${{ github.token }}
+          branch: ${{ github.head_ref }}

@@ -1,4 +1,3 @@
-import { GoogleAuth } from 'google-auth-library';
 import { Wrapper } from '../../../src/google/sheets/wrapper';
 import { A1Range, RawQueryRowsResult, QueryRowsResult } from '../../../src/google/sheets/models';
 
@@ -74,7 +73,8 @@ describe('RawQueryRowsResult', () => {
             };
 
             const expected: QueryRowsResult = { rows: [] };
-            const wrapper = new Wrapper(new GoogleAuth());
+            const mockAuth = { getAuth: jest.fn() };
+            const wrapper = new Wrapper(mockAuth);
             const result = wrapper['toQueryRowsResult'](rawResult);
             expect(result).toEqual(expected);
         });
@@ -121,7 +121,8 @@ describe('RawQueryRowsResult', () => {
                 ],
             };
 
-            const wrapper = new Wrapper(new GoogleAuth());
+            const mockAuth = { getAuth: jest.fn() };
+            const wrapper = new Wrapper(mockAuth);
             const result = wrapper['toQueryRowsResult'](rawResult);
             expect(result).toEqual(expected);
         });
@@ -146,7 +147,8 @@ describe('RawQueryRowsResult', () => {
                 },
             };
 
-            const wrapper = new Wrapper(new GoogleAuth());
+            const mockAuth = { getAuth: jest.fn() };
+            const wrapper = new Wrapper(mockAuth);
             expect(() => wrapper['toQueryRowsResult'](rawResult)).toThrow('Unsupported cell value type: something');
         });
     });

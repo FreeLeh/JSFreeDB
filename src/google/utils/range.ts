@@ -27,11 +27,19 @@ export class ColsMapping {
         this.mapping = mapping;
     }
 
-    public getNameMap(): Map<string, string> {
+    getNameMap(): Map<string, string> {
         const entries = this.mapping.entries();
         return new Map<string, string>(
             Array.from(entries).map(([key, value]) => [key, value.name])
         );
+    }
+
+    hasCol(col: string): boolean {
+        return this.mapping.has(col);
+    }
+
+    getColIdx(col: string): ColIdx {
+        return this.mapping.get(col)!;
     }
 }
 
@@ -43,8 +51,8 @@ const ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
  * @param columns - Array of column identifiers
  * @returns Mapping of column identifiers to their A1 notation and index
  */
-export function generateColumnMapping(columns: string[]): Map<string, ColIdx> {
-    return new Map(
+export function generateColumnMapping(columns: string[]): ColsMapping {
+    const mapping = new Map(
         columns.map((col, idx) => [
             col,
             {
@@ -53,6 +61,8 @@ export function generateColumnMapping(columns: string[]): Map<string, ColIdx> {
             },
         ])
     );
+
+    return new ColsMapping(mapping);
 }
 
 /**

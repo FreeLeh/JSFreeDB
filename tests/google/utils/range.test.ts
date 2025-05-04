@@ -1,3 +1,4 @@
+import { ColsMapping } from '../../../src/google/utils/range';
 import {
     getA1Range,
     generateColumnName,
@@ -123,7 +124,7 @@ describe('range', () => {
 
         testCases.forEach(tc => {
             it(tc.name, () => {
-                expect(generateColumnMapping(tc.input)).toEqual(tc.expected);
+                expect(generateColumnMapping(tc.input)).toEqual(new ColsMapping(tc.expected));
             });
         });
     });

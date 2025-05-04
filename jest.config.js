@@ -6,5 +6,8 @@ module.exports = {
         }
     },
     testEnvironment: 'node',
-    testMatch: ['**/tests/**/*.[jt]s?(x)', '**/?(*.)+(spec|test).[tj]s?(x)'],
+    testMatch: ['**/tests/**/*.(spec|test).[jt]s?(x)', '**/?(*.)+(spec|test).[tj]s?(x)'],
+    collectCoverage: true,
+    coverageDirectory: 'coverage',
+    coverageReporters: ['text', 'lcov', 'json-summary'],
 };
