@@ -1,5 +1,3 @@
-import { OAuth2Client } from 'google-auth-library';
-
 export const MAJOR_DIMENSION_ROWS = "ROWS";
 export const VALUE_INPUT_USER_ENTERED = "USER_ENTERED";
 export const RESPONSE_VALUE_RENDER_FORMATTED = "FORMATTED_VALUE";
