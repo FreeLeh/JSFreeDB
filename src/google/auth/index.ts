@@ -1,4 +1,5 @@
 export * from './base'
 export * from './models'
+export * from './oauth2'
 export * from './service_account'
 export * from './models'

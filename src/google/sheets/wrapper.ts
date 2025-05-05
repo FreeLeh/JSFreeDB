@@ -1,6 +1,5 @@
-import { google, sheets_v4 } from 'googleapis';
+import * as google from 'googleapis';
 import axios, { AxiosInstance } from 'axios';
-import { GoogleAuth } from 'google-auth-library';
 
 import { AuthClient } from '../auth/base';
 import {
@@ -20,13 +19,13 @@ import {
 } from './models';
 
 export class Wrapper {
-    private googleAuth: GoogleAuth;
-    private service: sheets_v4.Sheets;
+    private authClient: google.Auth.GoogleAuth | google.Auth.OAuth2Client;
+    private service: google.sheets_v4.Sheets;
     private rawClient: AxiosInstance;
 
     constructor(auth: AuthClient) {
-        this.googleAuth = auth.getAuth();
-        this.service = google.sheets({ version: 'v4', auth: this.googleAuth });
+        this.authClient = auth.getAuthHeadersClient();
+        this.service = google.google.sheets({ version: 'v4', auth: this.authClient });
         this.rawClient = axios.create({ validateStatus: () => true });
     }
 
@@ -284,7 +283,7 @@ export class Wrapper {
         // This ensures the latest access token is used (and refreshed if needed).
         const response = await this.rawClient.get(
             url,
-            { headers: await this.googleAuth.getRequestHeaders() },
+            { headers: await this.authClient.getRequestHeaders() },
         );
         if (response.status !== 200) {
             throw new Error(`Failed to query rows, status: ${response.status}`);

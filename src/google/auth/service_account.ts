@@ -25,7 +25,7 @@ export class ServiceAccountGoogleAuthClient implements AuthClient {
         return new ServiceAccountGoogleAuthClient(authClient);
     }
 
-    public getAuth(): google.Auth.GoogleAuth {
+    public getAuthHeadersClient(): google.Auth.GoogleAuth | google.Auth.OAuth2Client {
         return this.auth!;
     }
 }

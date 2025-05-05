@@ -26,7 +26,7 @@ describe('Wrapper', () => {
     let mockSheetsService: jest.Mocked<sheets_v4.Sheets>;
 
     beforeEach(() => {
-        mockAuth = { getAuth: jest.fn() };
+        mockAuth = { getAuthHeadersClient: jest.fn() };
         wrapper = new Wrapper(mockAuth);
         mockSheetsService = wrapper['service'] as unknown as jest.Mocked<sheets_v4.Sheets>;
     });
