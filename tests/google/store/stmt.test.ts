@@ -543,9 +543,7 @@ describe('GoogleSheetCountStmt', () => {
     it('throws if result shape is unexpected (no rows)', async () => {
         wrapper.queryRows.mockResolvedValueOnce({ rows: [] } as QueryRowsResult)
         const stmt = new GoogleSheetCountStmt(store)
-        await expect(stmt.exec())
-            .rejects
-            .toThrow(/unexpected count result/)
+        await expect(stmt.exec()).resolves.toBe(0)
     })
 
     it('throws if result shape is unexpected (too many cols)', async () => {
@@ -553,7 +551,7 @@ describe('GoogleSheetCountStmt', () => {
         const stmt = new GoogleSheetCountStmt(store)
         await expect(stmt.exec())
             .rejects
-            .toThrow(/unexpected count result/)
+            .toThrow(/unexpected result for count/)
     })
 
     it('throws if raw count is not a number', async () => {

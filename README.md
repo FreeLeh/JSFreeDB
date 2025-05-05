@@ -1,4 +1,4 @@
-# GoFreeDB
+# JSFreeDB
 <br />
 
 <div align="center">
@@ -67,7 +67,7 @@ under the hood and **the limitations**.
 ### Installation
 
 ```
-go get github.com/FreeLeh/GoFreeDB
+npm install jsfreedb
 ```
 
 ### Pre-requisites
@@ -77,164 +77,141 @@ go get github.com/FreeLeh/GoFreeDB
 
 ## Row Store
 
-Let's assume each row in the table is represented by the `Person` struct.
+Let's assume each row in the table is represented by the `Person` interface.
 
-```go
-type Person struct {
-	Name string `db:"name"`
-	Age  int    `db:"age"`
+```typescript
+interface Person {
+    name: string;
+    age: number;
 }
 ```
 
-Please read the [struct field to column mapping](#struct-field-to-column-mapping) section
-to understand the purpose of the `db` struct field tag.
-
-```go
-import (
-	"github.com/FreeLeh/GoFreeDB"
-	"github.com/FreeLeh/GoFreeDB/google/auth"
-)
+```typescript
+import { ServiceAccountGoogleAuthClient } from 'jsfreedb/google/auth/service_account';
+import { GOOGLE_SHEETS_READ_WRITE } from 'jsfreedb/google/auth/models';
+import { GoogleSheetRowStore, GoogleSheetRowStoreConfig } from 'jsfreedb/google/store/row';
 
 // If using Google Service Account.
-auth, err := auth.NewServiceFromFile(
-	"<path_to_service_account_json>", 
-	freedb.FreeDBGoogleAuthScopes, 
-	auth.ServiceConfig{},
-)
+const auth = ServiceAccountGoogleAuthClient.fromServiceAccountFile(
+    "<path_to_service_account_json>",
+    GOOGLE_SHEETS_READ_WRITE
+);
 
 // If using Google OAuth2 Flow.
-auth, err := auth.NewOAuth2FromFile(
-	"<path_to_client_secret_json>", 
-	"<path_to_cached_credentials_json>", 
-	freedb.FreeDBGoogleAuthScopes, 
-	auth.OAuth2Config{},
-)
+// const auth = OAuth2GoogleAuthClient.fromClientSecretFile(
+//     "<path_to_client_secret_json>",
+//     "<path_to_cached_credentials_json>",
+//     GOOGLE_SHEETS_READ_WRITE
+// );
 
-store := freedb.NewGoogleSheetRowStore(
-	auth, 
-	"<spreadsheet_id>", 
-	"<sheet_name>", 
-	freedb.GoogleSheetRowStoreConfig{Columns: []string{"name", "age"}},
-)
-defer store.Close(context.Background())
+const store = await GoogleSheetRowStore.create(
+    auth,
+    "<spreadsheet_id>",
+    "<sheet_name>",
+    new GoogleSheetRowStoreConfig(["name", "age"])
+);
 ```
 
 ### Querying Rows
 
-```go
+```typescript
 // Output variable
-var output []Person
+let output: Person[];
 
 // Select all columns for all rows
-err := store.
-	Select(&output).
-	Exec(context.Background())
+output = await store.select().exec();
 
-// Select a few columns for all rows (non-selected struct fields will have default value)
-err := store.
-	Select(&output, "name").
-	Exec(context.Background())
+// Select a few columns for all rows (non-selected fields will have default value)
+output = await store.select("name").exec();
 
 // Select rows with conditions
-err := store.
-	Select(&output).
-	Where("name = ? OR age >= ?", "freedb", 10).
-	Exec(context.Background())
+output = await store.select()
+    .where("name = ? OR age >= ?", "freedb", 10)
+    .exec();
 
 // Select rows with sorting/order by
-ordering := []freedb.ColumnOrderBy{
-	{Column: "name", OrderBy: freedb.OrderByAsc},
-	{Column: "age", OrderBy: freedb.OrderByDesc},
-}
-err := store.
-	Select(&output).
-	OrderBy(ordering).
-	Exec(context.Background())
+const ordering = [
+    { column: "name", orderBy: "ASC" },
+    { column: "age", orderBy: "DESC" }
+];
+output = await store.select()
+    .orderBy(ordering)
+    .exec();
 
 // Select rows with offset and limit
-err := store.
-	Select(&output).
-	Offset(10).
-	Limit(20).
-	Exec(context.Background())
+output = await store.select()
+    .offset(10)
+    .limit(20)
+    .exec();
 ```
 
 ### Counting Rows
 
-```go
+```typescript
 // Count all rows
-count, err := store.
-	Count().
-	Exec(context.Background())
+const count = await store.count().exec();
 
 // Count rows with conditions
-count, err := store.
-	Count().
-	Where("name = ? OR age >= ?", "freedb", 10).
-	Exec(context.Background())
+const count = await store.count()
+    .where("name = ? OR age >= ?", "freedb", 10)
+    .exec();
 ```
 
 ### Inserting Rows
 
-```go
-err := store.Insert(
-	Person{Name: "no_pointer", Age: 10}, 
-	&Person{Name: "with_pointer", Age: 20},
-).Exec(context.Background())
+```typescript
+await store.insert(
+    { name: "freedb", age: 10 },
+    { name: "another_row", age: 20 }
+).exec();
 ```
 
 ### Updating Rows
 
-```go
-colToUpdate := make(map[string]interface{})
-colToUpdate["name"] = "new_name"
-colToUpdate["age"] = 12
+```typescript
+const colToUpdate: Record<string, any> = {
+    name: "new_name",
+    age: 12
+};
 
 // Update all rows
-err := store.
-	Update(colToUpdate).
-	Exec(context.Background())
+await store.update(colToUpdate).exec();
 
 // Update rows with conditions
-err := store.
-	Update(colToUpdate).
-	Where("name = ? OR age >= ?", "freedb", 10).
-	Exec(context.Background())
+await store.update(colToUpdate)
+    .where("name = ? OR age >= ?", "freedb", 10)
+    .exec();
 ```
 
 ### Deleting Rows
 
-```go
+```typescript
 // Delete all rows
-err := store.
-	Delete().
-	Exec(context.Background())
+await store.delete().exec();
 
 // Delete rows with conditions
-err := store.
-	Delete().
-	Where("name = ? OR age >= ?", "freedb", 10).
-	Exec(context.Background())
+await store.delete()
+    .where("name = ? OR age >= ?", "freedb", 10)
+    .exec();
 ```
 
 ### Struct Field to Column Mapping
 
-The struct field tag `db` can be used for defining the mapping between the struct field and the column name.
-This works just like the `json` tag from [`encoding/json`](https://pkg.go.dev/encoding/json).
+In TypeScript, you can define interfaces or classes to represent your data structure. The column names in the Google Sheet should match the property names in your interface or class.
 
-Without `db` tag, the library will use the field name directly (case-sensitive).
-
-```go
-// This will map to the exact column name of "Name" and "Age".
-type NoTagPerson struct {
-	Name string
-	Age  int
+```typescript
+// This will map to the exact column name of "name" and "age".
+interface Person {
+    name: string;
+    age: number;
 }
 
-// This will map to the exact column name of "name" and "age" 
-type WithTagPerson struct {
-	Name string  `db:"name"`
-	Age  int     `db:"age"`
+// You can also use classes if you prefer
+class PersonClass {
+    constructor(
+        public name: string,
+        public age: number
+    ) {}
 }
 ```
 
@@ -242,54 +219,60 @@ type WithTagPerson struct {
 
 > Please use `KV Store V2` as much as possible, especially if you are creating a new storage.
 
-```go
-import (
-	"github.com/FreeLeh/GoFreeDB"
-	"github.com/FreeLeh/GoFreeDB/google/auth"
-)
+```typescript
+import { ServiceAccountGoogleAuthClient } from 'jsfreedb/google/auth/service_account';
+import { GOOGLE_SHEETS_READ_WRITE } from 'jsfreedb/google/auth/models';
+import { GoogleSheetKVStore } from 'jsfreedb/google/store/kv';
+import { KVMode } from 'jsfreedb/google/utils/kv';
 
 // If using Google Service Account.
-auth, err := auth.NewServiceFromFile(
-	"<path_to_service_account_json>", 
-	freedb.FreeDBGoogleAuthScopes, 
-	auth.ServiceConfig{},
-)
+const auth = ServiceAccountGoogleAuthClient.fromServiceAccountFile(
+    "<path_to_service_account_json>",
+    GOOGLE_SHEETS_READ_WRITE
+);
 
 // If using Google OAuth2 Flow.
-auth, err := auth.NewOAuth2FromFile(
-	"<path_to_client_secret_json>", 
-	"<path_to_cached_credentials_json>", 
-	freedb.FreeDBGoogleAuthScopes, 
-	auth.OAuth2Config{},
-)
+// const auth = OAuth2GoogleAuthClient.fromClientSecretFile(
+//     "<path_to_client_secret_json>",
+//     "<path_to_cached_credentials_json>",
+//     GOOGLE_SHEETS_READ_WRITE
+// );
 
-kv := freedb.NewGoogleSheetKVStore(
-	auth, 
-	"<spreadsheet_id>", 
-	"<sheet_name>", 
-	freedb.GoogleSheetKVStoreConfig{Mode: freedb.KVSetModeAppendOnly},
-)
-defer kv.Close(context.Background())
+const kv = await GoogleSheetKVStore.create(
+    auth,
+    "<spreadsheet_id>",
+    "<sheet_name>",
+    { mode: KVMode.AppendOnly }
+);
 ```
 
 ### Get Value
 
-If the key is not found, `freedb.ErrKeyNotFound` will be returned.
+If the key is not found, a `KeyNotFoundError` will be thrown.
 
-```go
-value, err := kv.Get(context.Background(), "k1")
+```typescript
+try {
+    const value = await kv.get("k1");
+    console.log(value);
+} catch (error) {
+    if (error instanceof KeyNotFoundError) {
+        console.log("Key not found");
+    } else {
+        throw error;
+    }
+}
 ```
 
 ### Set Key
 
-```go
-err := kv.Set(context.Background(), "k1", []byte("some_value"))
+```typescript
+await kv.set("k1", "some_value");
 ```
 
 ### Delete Key
 
-```go
-err := kv.Delete(context.Background(), "k1")
+```typescript
+await kv.delete("k1");
 ```
 
 ### Supported Modes
@@ -301,22 +284,22 @@ There are 2 different modes supported:
 1. Default mode.
 2. Append only mode.
 
-```go
+```typescript
 // Default mode
-kv := freedb.NewGoogleSheetKVStore(
-	auth,
-	"<spreadsheet_id>",
-	"<sheet_name>",
-	freedb.GoogleSheetKVStoreConfig{Mode: freedb.KVModeDefault},
-)
+const kv = await GoogleSheetKVStore.create(
+    auth,
+    "<spreadsheet_id>",
+    "<sheet_name>",
+    { mode: KVMode.Default }
+);
 
 // Append only mode
-kv := freedb.NewGoogleSheetKVStore(
-	auth,
-	"<spreadsheet_id>",
-	"<sheet_name>",
-	freedb.GoogleSheetKVStoreConfig{Mode: freedb.KVModeAppendOnly},
-)
+const kv = await GoogleSheetKVStore.create(
+    auth,
+    "<spreadsheet_id>",
+    "<sheet_name>",
+    { mode: KVMode.AppendOnly }
+);
 ```
 
 ## KV Store V2
@@ -331,54 +314,60 @@ You cannot use an existing sheet based on `KV Store` with `KV Store V2` as the s
   and increase it by 1 until the last row.
 - Remove the timestamp column as `KV Store V2` does not depend on it anymore. 
 
-```go
-import (
-	"github.com/FreeLeh/GoFreeDB"
-	"github.com/FreeLeh/GoFreeDB/google/auth"
-)
+```typescript
+import { ServiceAccountGoogleAuthClient } from 'jsfreedb/google/auth/service_account';
+import { GOOGLE_SHEETS_READ_WRITE } from 'jsfreedb/google/auth/models';
+import { GoogleSheetKVStoreV2 } from 'jsfreedb/google/store/kv_v2';
+import { KVMode } from 'jsfreedb/google/utils/kv';
 
 // If using Google Service Account.
-auth, err := auth.NewServiceFromFile(
-	"<path_to_service_account_json>", 
-	freedb.FreeDBGoogleAuthScopes, 
-	auth.ServiceConfig{},
-)
+const auth = ServiceAccountGoogleAuthClient.fromServiceAccountFile(
+    "<path_to_service_account_json>",
+    GOOGLE_SHEETS_READ_WRITE
+);
 
 // If using Google OAuth2 Flow.
-auth, err := auth.NewOAuth2FromFile(
-	"<path_to_client_secret_json>", 
-	"<path_to_cached_credentials_json>", 
-	freedb.FreeDBGoogleAuthScopes, 
-	auth.OAuth2Config{},
-)
+// const auth = OAuth2GoogleAuthClient.fromClientSecretFile(
+//     "<path_to_client_secret_json>",
+//     "<path_to_cached_credentials_json>",
+//     GOOGLE_SHEETS_READ_WRITE
+// );
 
-kv := freedb.NewGoogleSheetKVStoreV2(
-	auth, 
-	"<spreadsheet_id>", 
-	"<sheet_name>", 
-	freedb.GoogleSheetKVStoreV2Config{Mode: freedb.KVSetModeAppendOnly},
-)
-defer kv.Close(context.Background())
+const kv = await GoogleSheetKVStoreV2.create(
+    auth,
+    "<spreadsheet_id>",
+    "<sheet_name>",
+    { mode: KVMode.AppendOnly }
+);
 ```
 
 ### Get Value V2
 
-If the key is not found, `freedb.ErrKeyNotFound` will be returned.
+If the key is not found, a `KeyNotFoundError` will be thrown.
 
-```go
-value, err := kv.Get(context.Background(), "k1")
+```typescript
+try {
+    const value = await kv.get("k1");
+    console.log(value);
+} catch (error) {
+    if (error instanceof KeyNotFoundError) {
+        console.log("Key not found");
+    } else {
+        throw error;
+    }
+}
 ```
 
 ### Set Key V2
 
-```go
-err := kv.Set(context.Background(), "k1", []byte("some_value"))
+```typescript
+await kv.set("k1", "some_value");
 ```
 
 ### Delete Key V2
 
-```go
-err := kv.Delete(context.Background(), "k1")
+```typescript
+await kv.delete("k1");
 ```
 
 ### Supported Modes V2
@@ -390,24 +379,24 @@ There are 2 different modes supported:
 1. Default mode.
 2. Append only mode.
 
-```go
+```typescript
 // Default mode
-kv := freedb.NewGoogleSheetKVStoreV2(
-	auth,
-	"<spreadsheet_id>",
-	"<sheet_name>",
-	freedb.GoogleSheetKVStoreV2Config{Mode: freedb.KVModeDefault},
-)
+const kv = await GoogleSheetKVStoreV2.create(
+    auth,
+    "<spreadsheet_id>",
+    "<sheet_name>",
+    { mode: KVMode.Default }
+);
 
 // Append only mode
-kv := freedb.NewGoogleSheetKVStoreV2(
-	auth,
-	"<spreadsheet_id>",
-	"<sheet_name>",
-	freedb.GoogleSheetKVStoreV2Config{Mode: freedb.KVModeAppendOnly},
-)
+const kv = await GoogleSheetKVStoreV2.create(
+    auth,
+    "<spreadsheet_id>",
+    "<sheet_name>",
+    { mode: KVMode.AppendOnly }
+);
 ```
 
 ## License
 
-This project is [MIT licensed](https://github.com/FreeLeh/GoFreeDB/blob/main/LICENSE).
+This project is [MIT licensed](https://github.com/FreeLeh/JSFreeDB/blob/main/LICENSE).

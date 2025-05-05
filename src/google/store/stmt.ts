@@ -302,8 +302,11 @@ export class GoogleSheetCountStmt {
             true,
         )
 
+        if (result.rows.length < 1 || result.rows[0]!.length < 1) {
+            return 0
+        }
         if (result.rows.length !== 1 || result.rows[0]!.length !== 1) {
-            throw new Error(`unexpected count result: ${JSON.stringify(result.rows)}`)
+            throw new Error(`unexpected result for count: ${JSON.stringify(result)}`)
         }
 
         const raw = result.rows[0]![0]
