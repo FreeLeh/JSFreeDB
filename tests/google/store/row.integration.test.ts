@@ -42,6 +42,13 @@ describe('GoogleSheetRowStore integration', () => {
             await sleep(1000)
             await expect(
                 store
+                    .count()
+                    .exec()
+            ).resolves.toEqual(0)
+
+            await sleep(1000)
+            await expect(
+                store
                     .select('name', 'age')
                     .offset(10)
                     .limit(10)

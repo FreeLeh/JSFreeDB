@@ -5,7 +5,7 @@ import { Codec } from '../codec/base';
 import { BasicCodec } from '../codec/basic';
 import { OrderBy } from '../utils/row';
 
-interface GoogleSheetKVStoreConfig {
+export interface GoogleSheetKVStoreConfig {
     mode: KVMode;
 }
 
@@ -19,7 +19,7 @@ export class GoogleSheetKVStore {
     private mode: KVMode
     private codec: Codec
 
-    constructor(rowStore: GoogleSheetRowStore, mode: KVMode, codec: Codec) {
+    private constructor(rowStore: GoogleSheetRowStore, mode: KVMode, codec: Codec) {
         this.rowStore = rowStore
         this.mode = mode
         this.codec = codec

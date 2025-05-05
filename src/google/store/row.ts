@@ -48,15 +48,13 @@ export class GoogleSheetRowStoreConfig {
         if (this.columns.length === 0) {
             throw new Error('columns must have at least one column');
         }
+
         const maxColumn = 26; // adjust as needed
         if (this.columns.length > maxColumn) {
             throw new Error(`you can only have up to ${maxColumn} columns`);
         }
     }
 }
-
-/** Custom error thrown for invalid GoogleSheetRowStoreConfig operations */
-export class GoogleSheetRowStoreConfigError extends Error { }
 
 /**
  * GoogleSheetRowStore encapsulates row store functionality on top of a Google Sheet.
