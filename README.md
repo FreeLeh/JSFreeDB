@@ -59,15 +59,14 @@
 
 ## Protocols
 
-Clients are strongly encouraged to read through the **[protocols document](https://github.com/FreeLeh/docs/blob/main/freedb/protocols.md)** to see how things work
-under the hood and **the limitations**.
+Clients are strongly encouraged to read through the **[protocols document](https://github.com/FreeLeh/docs/blob/main/freedb/protocols.md)** to see how things work under the hood and **the limitations**.
 
 ## Getting Started
 
 ### Installation
 
 ```
-npm install jsfreedb
+npm install @freeleh/jsfreedb
 ```
 
 ### Pre-requisites
@@ -79,6 +78,9 @@ npm install jsfreedb
 
 Let's assume each row in the table is represented by the `Person` interface.
 
+> Note that you can also represent the row using a normal JavaScript object.
+> The object must follow the columns registered in the `store`.
+
 ```typescript
 interface Person {
     name: string;
@@ -87,37 +89,41 @@ interface Person {
 ```
 
 ```typescript
-import { ServiceAccountGoogleAuthClient } from 'jsfreedb/google/auth/service_account';
-import { GOOGLE_SHEETS_READ_WRITE } from 'jsfreedb/google/auth/models';
-import { GoogleSheetRowStore, GoogleSheetRowStoreConfig } from 'jsfreedb/google/store/row';
+import {
+    Oauth2GoogleAuthClient,
+    ServiceAccountGoogleAuthClient,
+    GoogleSheetRowStore,
+    GoogleSheetRowStoreConfig,
+    GOOGLE_SHEETS_READ_WRITE,
+} from '@freeleh/jsfreedb';
 
 // If using Google Service Account.
 const auth = ServiceAccountGoogleAuthClient.fromServiceAccountFile(
     "<path_to_service_account_json>",
-    GOOGLE_SHEETS_READ_WRITE
+    GOOGLE_SHEETS_READ_WRITE,
 );
 
 // If using Google OAuth2 Flow.
-// const auth = OAuth2GoogleAuthClient.fromClientSecretFile(
-//     "<path_to_client_secret_json>",
-//     "<path_to_cached_credentials_json>",
-//     GOOGLE_SHEETS_READ_WRITE
-// );
+const auth = OAuth2GoogleAuthClient.fromFile(
+    "<path_to_client_secret_json>",
+    "<path_to_cached_credentials_json>",
+    GOOGLE_SHEETS_READ_WRITE,
+);
 
+// Create a new row store.
 const store = await GoogleSheetRowStore.create(
     auth,
     "<spreadsheet_id>",
     "<sheet_name>",
-    new GoogleSheetRowStoreConfig(["name", "age"])
+    new GoogleSheetRowStoreConfig(["name", "age"]),
 );
 ```
 
 ### Querying Rows
 
-```typescript
-// Output variable
-let output: Person[];
+The returned value is an array of JavaScript objects (or TypeScript `Record<string, any>`) that represents the rows in the table.
 
+```typescript
 // Select all columns for all rows
 output = await store.select().exec();
 
@@ -171,7 +177,7 @@ await store.insert(
 ```typescript
 const colToUpdate: Record<string, any> = {
     name: "new_name",
-    age: 12
+    age: 12,
 };
 
 // Update all rows
@@ -220,10 +226,13 @@ class PersonClass {
 > Please use `KV Store V2` as much as possible, especially if you are creating a new storage.
 
 ```typescript
-import { ServiceAccountGoogleAuthClient } from 'jsfreedb/google/auth/service_account';
-import { GOOGLE_SHEETS_READ_WRITE } from 'jsfreedb/google/auth/models';
-import { GoogleSheetKVStore } from 'jsfreedb/google/store/kv';
-import { KVMode } from 'jsfreedb/google/utils/kv';
+import {
+    OAuth2GoogleAuthClient,
+    ServiceAccountGoogleAuthClient,
+    GOOGLE_SHEETS_READ_WRITE,
+    GoogleSheetKVStore,
+    KVMode,
+} from '@freeleh/jsfreedb';
 
 // If using Google Service Account.
 const auth = ServiceAccountGoogleAuthClient.fromServiceAccountFile(
@@ -232,11 +241,11 @@ const auth = ServiceAccountGoogleAuthClient.fromServiceAccountFile(
 );
 
 // If using Google OAuth2 Flow.
-// const auth = OAuth2GoogleAuthClient.fromClientSecretFile(
-//     "<path_to_client_secret_json>",
-//     "<path_to_cached_credentials_json>",
-//     GOOGLE_SHEETS_READ_WRITE
-// );
+const auth = OAuth2GoogleAuthClient.fromFile(
+    "<path_to_client_secret_json>",
+    "<path_to_cached_credentials_json>",
+    GOOGLE_SHEETS_READ_WRITE
+);
 
 const kv = await GoogleSheetKVStore.create(
     auth,
@@ -295,101 +304,6 @@ const kv = await GoogleSheetKVStore.create(
 
 // Append only mode
 const kv = await GoogleSheetKVStore.create(
-    auth,
-    "<spreadsheet_id>",
-    "<sheet_name>",
-    { mode: KVMode.AppendOnly }
-);
-```
-
-## KV Store V2
-
-The KV Store V2 is implemented internally using the row store.
-
-> The original `KV Store` was created using more complicated formulas, making it less maintainable.
-> You can still use the original `KV Store` implementation, but we strongly suggest using this new `KV Store V2`.
-
-You cannot use an existing sheet based on `KV Store` with `KV Store V2` as the sheet structure is different. 
-- If you want to convert an existing sheet, just add an `_rid` column and insert the first key-value row with `1`
-  and increase it by 1 until the last row.
-- Remove the timestamp column as `KV Store V2` does not depend on it anymore. 
-
-```typescript
-import { ServiceAccountGoogleAuthClient } from 'jsfreedb/google/auth/service_account';
-import { GOOGLE_SHEETS_READ_WRITE } from 'jsfreedb/google/auth/models';
-import { GoogleSheetKVStoreV2 } from 'jsfreedb/google/store/kv_v2';
-import { KVMode } from 'jsfreedb/google/utils/kv';
-
-// If using Google Service Account.
-const auth = ServiceAccountGoogleAuthClient.fromServiceAccountFile(
-    "<path_to_service_account_json>",
-    GOOGLE_SHEETS_READ_WRITE
-);
-
-// If using Google OAuth2 Flow.
-// const auth = OAuth2GoogleAuthClient.fromClientSecretFile(
-//     "<path_to_client_secret_json>",
-//     "<path_to_cached_credentials_json>",
-//     GOOGLE_SHEETS_READ_WRITE
-// );
-
-const kv = await GoogleSheetKVStoreV2.create(
-    auth,
-    "<spreadsheet_id>",
-    "<sheet_name>",
-    { mode: KVMode.AppendOnly }
-);
-```
-
-### Get Value V2
-
-If the key is not found, a `KeyNotFoundError` will be thrown.
-
-```typescript
-try {
-    const value = await kv.get("k1");
-    console.log(value);
-} catch (error) {
-    if (error instanceof KeyNotFoundError) {
-        console.log("Key not found");
-    } else {
-        throw error;
-    }
-}
-```
-
-### Set Key V2
-
-```typescript
-await kv.set("k1", "some_value");
-```
-
-### Delete Key V2
-
-```typescript
-await kv.delete("k1");
-```
-
-### Supported Modes V2
-
-> For more details on how the two modes are different, please read the [protocol document](https://github.com/FreeLeh/docs/blob/main/freedb/protocols.md).
-
-There are 2 different modes supported:
-
-1. Default mode.
-2. Append only mode.
-
-```typescript
-// Default mode
-const kv = await GoogleSheetKVStoreV2.create(
-    auth,
-    "<spreadsheet_id>",
-    "<sheet_name>",
-    { mode: KVMode.Default }
-);
-
-// Append only mode
-const kv = await GoogleSheetKVStoreV2.create(
     auth,
     "<spreadsheet_id>",
     "<sheet_name>",
