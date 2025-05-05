@@ -1,5 +1,5 @@
-import * as google from 'googleapis';
+import * as google from 'googleapis'
 
 export interface AuthClient {
-    getAuth(): google.Auth.GoogleAuth
+    getAuthHeadersClient(): google.Auth.GoogleAuth | google.Auth.OAuth2Client
 }
